@@ -9,11 +9,11 @@ namespace bbApi.App.Models
         {
             CreateMap<Group, GroupDTO>();
             CreateMap<User, UserDTO>();
-            CreateMap<RoleDefinition, RoleDTO>();
+            CreateMap<DirectoryRole, RoleDTO>();
+            CreateMap<DirectoryObject, DirectoryObjectDTO>();
 
             CreateMap<NewGroupDTO, Group>();
             CreateMap<UserDTO, User>();
-            CreateMap<RoleDTO, RoleDefinition>();
         }
     }
 }

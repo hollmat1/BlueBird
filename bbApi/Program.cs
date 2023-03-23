@@ -1,11 +1,8 @@
 using bbApi.App.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Graph.ExternalConnectors;
 using Microsoft.Identity.Web;
+using Microsoft.Extensions.Configuration.UserSecrets;
+using System.Reflection;
 
 var initialScopes = new string[] {  };
 
@@ -22,7 +19,6 @@ builder.Services.AddAuthentication()
           .EnableTokenAcquisitionToCallDownstreamApi()
           .AddMicrosoftGraph(builder.Configuration.GetSection("GraphApi"))
           .AddInMemoryTokenCaches();
-
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
