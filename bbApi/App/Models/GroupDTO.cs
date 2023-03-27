@@ -13,5 +13,10 @@ namespace bbApi.App.Models
         public string Description { get; set; }
         public bool SecurityEnabled { get; set; }
         public bool IsAssignableToRole { get; set; }
+
+        public string Mail { get; set; }
+        public string MailNickName { get; set; }
+        public bool MailEnabled { get; set; }
+        public string[] ProxyAddressses { get; set; }
     }
 }

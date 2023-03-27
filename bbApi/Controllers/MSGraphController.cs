@@ -12,10 +12,10 @@ namespace bbApi.Controllers
     [ApiController]
     public class MSGraphController : ControllerBase
     {
-        private readonly IADGraphService graphService;
+        private readonly IADGraphGroupsService graphService;
         private readonly ITokenAcquisition tokenaquisition;
 
-        public MSGraphController(IADGraphService graphService, ITokenAcquisition tokenaquisition)
+        public MSGraphController(IADGraphGroupsService graphService, ITokenAcquisition tokenaquisition)
         {
             this.graphService = graphService;
             this.tokenaquisition = tokenaquisition;
@@ -39,7 +39,7 @@ namespace bbApi.Controllers
         [ProducesResponseType(typeof(GroupDTO), 200)]
         public async Task<IActionResult> GetGroupAsync(string DisplayName)
         {
-            var res = graphService.GetGroupAsync(DisplayName).Result;
+            var res = await graphService.GetGroupAsync(DisplayName);
 
             if (res == null)
                 return new NotFoundResult();
@@ -53,7 +53,7 @@ namespace bbApi.Controllers
         [ProducesResponseType(typeof(GroupDTO), (int)HttpStatusCode.Created)]
         public async Task<IActionResult> PostCreateGroup([FromBody] NewGroupDTO newGroup)
         {
-            graphService.CreateGroupAsync(newGroup);
+            await graphService.CreateGroupAsync(newGroup);
             return Ok();
         }
 
@@ -62,7 +62,7 @@ namespace bbApi.Controllers
         [ProducesResponseType(typeof(GroupDTO), (int)HttpStatusCode.Created)]
         public async Task<IActionResult> PostAddMember(string GroupId, [FromBody] string memberid)
         {
-            graphService.AddGroupMembership(GroupId, memberid);
+            await graphService.AddGroupMemberAsync(GroupId, memberid);
             return Ok();
         }
 

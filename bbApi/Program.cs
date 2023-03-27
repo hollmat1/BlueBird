@@ -25,7 +25,7 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IADGraphService, ADGraphService>();
+builder.Services.AddScoped<IADGraphGroupsService, ADGraphGroupsService>();
 
 builder.Services.AddAutoMapper(typeof(Program));
 

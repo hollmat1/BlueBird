@@ -11,9 +11,13 @@ namespace bbApi.App.Models
             CreateMap<User, UserDTO>();
             CreateMap<DirectoryRole, RoleDTO>();
             CreateMap<DirectoryObject, DirectoryObjectDTO>();
+            CreateMap<AdministrativeUnit, AdminUnitDTO>();
 
             CreateMap<NewGroupDTO, Group>();
             CreateMap<UserDTO, User>();
+
+            CreateMap<ApplicationDTO, Application>();
+            CreateMap<NewApplicationDTO, Application>();
         }
     }
 }
