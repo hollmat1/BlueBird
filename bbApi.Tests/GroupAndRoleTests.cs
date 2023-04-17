@@ -34,6 +34,42 @@ namespace bbApi.Tests
         }
 
         [TestMethod]
+        public void Can_Get_AD_User_Paged_From_MSGraph()
+        {
+            var result = _adGraphGroupsService.GetUsersAsync(100).Result;
+            Assert.IsNotNull(result.CurrentPage != null);
+            Assert.IsTrue(result.CurrentPage?.Count().Equals(result.Top));
+            while(result.SkipToken != null)
+            {
+                result = _adGraphGroupsService.GetUsersAsync(100, result.SkipToken).Result;
+            }
+        }
+
+        [TestMethod]
+        public void Can_Get_AD_Groups_Paged_From_MSGraph()
+        {
+            var results = _adGraphGroupsService.GetGroupsAsync(100).Result;
+            Assert.IsNotNull(results.CurrentPage != null);
+            Assert.IsTrue(results.CurrentPage?.Count().Equals(results.Top));
+            while (results.SkipToken != null)
+            {
+                results = _adGraphGroupsService.GetGroupsAsync(100, results.SkipToken).Result;
+
+                foreach (var result in results.CurrentPage)
+                {
+                    var members = _adGraphGroupsService.GetGroupMembersAsync(result.Id).Result;
+                    if (members.CurrentPage?.Count() > 0)
+                    {
+                        Console.WriteLine("sdsadas");
+                    }
+                }
+
+
+
+            }
+        }
+
+        [TestMethod]
         public void Can_Get_AAD_Role_By_Name_From_MSGraph()
         {
             var result = _adGraphGroupsService.GetAADRoleAsync(TestRoleName).Result;

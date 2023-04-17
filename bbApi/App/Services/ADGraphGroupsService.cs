@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.Execution;
+using Azure;
 using Azure.Core;
 using Azure.Core.Serialization;
 using bbApi.App.Infrastructure;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Graph;
 using Microsoft.Identity.Web;
 using System.Diagnostics;
+using System.Drawing.Printing;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -23,15 +25,109 @@ namespace bbApi.App.Services
 
         }
 
+        public async Task<PagedResult<UserDTO>> GetUsersAsync(int pageSize = 100, string skipToken = "")
+        {
+            var queryOptions = new List<QueryOption>
+            {
+                new QueryOption("$top", pageSize.ToString())
+            };
+
+            if (!string.IsNullOrEmpty(skipToken))
+            {
+                queryOptions.Add(new QueryOption("$skiptoken", skipToken));
+            }
+
+            var results = await graphServiceClient.Users
+                        .Request(queryOptions)
+                        .Select(x => new
+                        {
+                            x.Id,
+                            x.DisplayName,
+                            x.UserPrincipalName,
+                            x.AccountEnabled,
+                            x.OnPremisesImmutableId,
+                            x.Mail,
+                            x.OnPremisesUserPrincipalName
+                        })
+                        .GetAsync();
+
+            // Get SkipToken, if exists
+            if (results.NextPageRequest != null)
+            {
+                skipToken = results
+                    .NextPageRequest
+                    .QueryOptions
+                    .FirstOrDefault(
+                        x => string.Equals("$skiptoken", x.Name, StringComparison.InvariantCultureIgnoreCase))
+                    .Value;
+            }
+            else { skipToken = null; }
+
+            return new PagedResult<UserDTO>
+            {
+                CurrentPage = results.CurrentPage.Select(mapper.Map<UserDTO>),
+                SkipToken = skipToken,
+                Top = pageSize
+            };
+        }
+
         public async Task<UserDTO?> GetUserAsync(string UserPrincipalName)
         {
-            var user = await graphServiceClient.Users.Request().Filter($"userprincipalname eq '{UserPrincipalName}'").GetAsync();
+            var user = await graphServiceClient.Users.Request().Filter($"userprincipalname eq '{UserPrincipalName}'").WithAppOnly().GetAsync();
 
             if (user == null)
                 return default(UserDTO?);
 
             return mapper.Map<UserDTO>(user.First());
         }
+
+        public async Task<PagedResult<GroupDTO>> GetGroupsAsync(int pageSize = 100, string skipToken = "")
+        {
+            var queryOptions = new List<QueryOption>
+            {
+                new QueryOption("$top", pageSize.ToString())
+            };
+
+            if (!string.IsNullOrEmpty(skipToken))
+            {
+                queryOptions.Add(new QueryOption("$skiptoken", skipToken));
+            }
+
+            var results = await graphServiceClient.Groups
+                        .Request(queryOptions)
+                        .Select(x => new
+                        {
+                            x.Id,
+                            x.DisplayName,
+                            x.Description,
+                            x.SecurityEnabled,
+                            x.IsAssignableToRole,
+                            x.MailNickname,
+                            x.MailEnabled,
+                            x.ProxyAddresses,
+                            x.Mail,
+                        }).GetAsync();
+
+            // Get SkipToken, if exists
+            if (results.NextPageRequest != null)
+            {
+                skipToken = results
+                    .NextPageRequest
+                    .QueryOptions
+                    .FirstOrDefault(
+                        x => string.Equals("$skiptoken", x.Name, StringComparison.InvariantCultureIgnoreCase))
+                    .Value;
+            }
+            else { skipToken = null; }
+
+            return new PagedResult<GroupDTO>
+            {
+                CurrentPage = results.CurrentPage.Select(mapper.Map<GroupDTO>),
+                SkipToken = skipToken,
+                Top = pageSize
+            };
+        }
+
 
         public async Task<GroupDTO?> GetGroupAsync(string DisplayName)
         {
@@ -87,19 +183,61 @@ namespace bbApi.App.Services
                 if (se.StatusCode == HttpStatusCode.NotFound )
                     return false;
             }
-
             return false;
         }
 
-        public async Task<GroupDTO?> GetGroupMembersAsync(string DisplayName)
+        public async Task<PagedResult<DirectoryObjectDTO>> GetGroupMembersAsync(string Id, int pageSize = 100, string skipToken = "")
         {
-            throw new NotImplementedException();
-            var group = await graphServiceClient.Groups.Request().Filter($"displayname eq '{DisplayName}'").GetAsync();
+            var queryOptions = new List<QueryOption>
+            {
+                new QueryOption("$top", pageSize.ToString())
+            };
 
-            if (group.Count == 0)
-                return default(GroupDTO?);
+            if (!string.IsNullOrEmpty(skipToken))
+            {
+                queryOptions.Add(new QueryOption("$skiptoken", skipToken));
+            }
 
-            return mapper.Map<GroupDTO>(group.First());
+            var results = await graphServiceClient.Groups[Id].Members.Request(queryOptions).GetAsync();
+
+            // Get SkipToken, if exists
+            if (results.NextPageRequest != null)
+            {
+                skipToken = results
+                    .NextPageRequest
+                    .QueryOptions
+                    .FirstOrDefault(
+                        x => string.Equals("$skiptoken", x.Name, StringComparison.InvariantCultureIgnoreCase))
+                    .Value;
+            }
+            else { skipToken = null; }
+
+            return new PagedResult<DirectoryObjectDTO>
+            {
+                CurrentPage = results.CurrentPage.Select(member =>
+                {
+                    var memberDTO = mapper.Map<DirectoryObjectDTO>(member);
+
+                    if (member is Group)
+                    {
+                        memberDTO.DisplayName = ((Group)member).DisplayName;
+                        memberDTO.MemberType = "Group";
+                    }
+                    else if (member is User)
+                    {
+                        memberDTO.DisplayName = ((User)member).DisplayName;
+                        memberDTO.MemberType = "User";
+                    }
+                    else
+                    {
+                        memberDTO.MemberType = "Unknown";
+                    }
+
+                    return memberDTO;
+                }),
+                SkipToken = skipToken,
+                Top = pageSize
+            };
         }
 
         public async Task<GroupDTO?> GetAdminUnitMembersAsync(string DisplayName)

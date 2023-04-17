@@ -10,5 +10,6 @@ namespace bbApi.App.Models
         public string Mail { get; set; }
         public string UserPrincipalName { get; set; }
         public string OnPremisesUserPrincipalName { get; set; }
+        public string OnPremisesImmutableId { get; set; }
     }
 }
